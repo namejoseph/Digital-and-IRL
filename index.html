@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital & IRL</title>
+
+  <style>
+    :root {
+      --layer-one-speed: 22s;
+      --layer-two-speed: 27s;
+      --layer-three-speed: 18s;
+      --text-color-speed: 14s;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #d9e8df;
+      cursor: none;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      isolation: isolate;
+      background: #d9e8df;
+    }
+
+    /*
+      Mouse movement now makes the change VERY obvious.
+      These values are restored after the mouse stops.
+    */
+    .stage.is-moving {
+      --layer-one-speed: 3.2s;
+      --layer-two-speed: 3.8s;
+      --layer-three-speed: 2.6s;
+      --text-color-speed: 3s;
+    }
+
+    .background {
+      position: absolute;
+      inset: -18%;
+      z-index: 0;
+      overflow: hidden;
+      background: #dbe9df;
+      filter: saturate(.88) contrast(1.04);
+    }
+
+    .color-layer {
+      position: absolute;
+      inset: -18%;
+      transform: scale(1.15);
+      will-change: transform, background-position;
+    }
+
+    .color-layer.one {
+      background:
+        radial-gradient(
+          circle at 15% 45%,
+          rgba(104, 241, 143, .88) 0%,
+          rgba(104, 241, 143, .68) 24%,
+          transparent 54%
+        ),
+        radial-gradient(
+          circle at 82% 22%,
+          rgba(255, 84, 151, .82) 0%,
+          rgba(255, 84, 151, .56) 23%,
+          transparent 50%
+        ),
+        radial-gradient(
+          circle at 78% 78%,
+          rgba(255, 156, 112, .72) 0%,
+          rgba(255, 156, 112, .46) 26%,
+          transparent 54%
+        );
+
+      animation:
+        driftOne var(--layer-one-speed) ease-in-out infinite alternate;
+    }
+
+    .color-layer.two {
+      background:
+        radial-gradient(
+          circle at 58% 28%,
+          rgba(89, 191, 255, .68) 0%,
+          rgba(89, 191, 255, .40) 22%,
+          transparent 49%
+        ),
+        radial-gradient(
+          circle at 68% 55%,
+          rgba(140, 82, 255, .68) 0%,
+          rgba(140, 82, 255, .38) 22%,
+          transparent 50%
+        ),
+        radial-gradient(
+          circle at 40% 82%,
+          rgba(255, 216, 127, .54) 0%,
+          rgba(255, 216, 127, .30) 24%,
+          transparent 53%
+        );
+
+      mix-blend-mode: screen;
+      opacity: .95;
+
+      animation:
+        driftTwo var(--layer-two-speed) ease-in-out infinite alternate;
+    }
+
+    .color-layer.three {
+      background:
+        linear-gradient(
+          115deg,
+          rgba(102, 241, 154, .28),
+          rgba(102, 220, 242, .18) 35%,
+          rgba(181, 118, 255, .24) 66%,
+          rgba(255, 108, 153, .28)
+        );
+
+      background-size: 220% 220%;
+      mix-blend-mode: soft-light;
+
+      animation:
+        wash var(--layer-three-speed) ease-in-out infinite;
+    }
+
+    .background::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+
+      background:
+        radial-gradient(
+          circle at 50% 45%,
+          rgba(255,255,255,.10),
+          rgba(255,255,255,0) 58%
+        );
+
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    /*
+      CLEAN SINGLE-LAYER TEXT
+      No pseudo-element duplication, so no strange seams on g / l / L.
+    */
+    .word {
+      position: absolute;
+      z-index: 3;
+      display: inline-block;
+
+      margin: 0;
+      padding: .08em .04em .18em .04em;
+
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.07em;
+      white-space: nowrap;
+      overflow: visible;
+      user-select: none;
+
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+
+      background:
+        linear-gradient(
+          110deg,
+          #f3fbf8,
+          #dff4ee,
+          #e2eaff,
+          #f4def0,
+          #fff0dc,
+          #e0f5ea,
+          #e6ddf4,
+          #f3fbf8
+        );
+
+      background-size: 320% 320%;
+      background-position: 0% 50%;
+
+      -webkit-background-clip: text;
+      background-clip: text;
+
+      /*
+        Two independent animations:
+        1. color moves through the text
+        2. visibility fades in and out
+      */
+      animation:
+        textColor var(--text-color-speed) ease-in-out infinite,
+        textFade var(--fade-speed, 9s) ease-in-out infinite;
+
+      will-change: opacity, background-position;
+    }
+
+    #digital {
+      animation-delay: -2s, -1s;
+    }
+
+    #ampersand {
+      animation-delay: -6s, -4s;
+    }
+
+    #irl {
+      animation-delay: -10s, -7s;
+    }
+
+    /* White rotating crosshair */
+    .cursor {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 42px;
+      height: 42px;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+    }
+
+    .cursor-rotator {
+      position: absolute;
+      inset: 0;
+      animation: rotateCrosshair 5.5s linear infinite;
+      will-change: transform;
+    }
+
+    .cursor-line-h,
+    .cursor-line-v {
+      position: absolute;
+      background: #fff;
+      box-shadow:
+        0 0 4px rgba(255,255,255,.95),
+        0 0 10px rgba(255,255,255,.48);
+    }
+
+    .cursor-line-h {
+      width: 42px;
+      height: 1px;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .cursor-line-v {
+      width: 1px;
+      height: 42px;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .cursor-ring {
+      position: absolute;
+      inset: 11px;
+      border: 1px solid #fff;
+      border-radius: 50%;
+      box-shadow:
+        0 0 4px rgba(255,255,255,.85),
+        0 0 9px rgba(255,255,255,.40);
+    }
+
+    .cursor-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #fff;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 7px rgba(255,255,255,.9);
+    }
+
+    @keyframes driftOne {
+      0% {
+        transform: translate3d(-3%, -2%, 0) scale(1.12);
+      }
+      50% {
+        transform: translate3d(6%, 4%, 0) scale(1.22);
+      }
+      100% {
+        transform: translate3d(-1%, 7%, 0) scale(1.16);
+      }
+    }
+
+    @keyframes driftTwo {
+      0% {
+        transform: translate3d(4%, -4%, 0) scale(1.18);
+      }
+      50% {
+        transform: translate3d(-7%, 5%, 0) scale(1.10);
+      }
+      100% {
+        transform: translate3d(5%, 1%, 0) scale(1.23);
+      }
+    }
+
+    @keyframes wash {
+      0% {
+        background-position: 0% 50%;
+        transform: scale(1.1);
+      }
+      50% {
+        background-position: 100% 50%;
+        transform: scale(1.22);
+      }
+      100% {
+        background-position: 0% 50%;
+        transform: scale(1.1);
+      }
+    }
+
+    @keyframes textColor {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /*
+      Visible -> nearly gone -> visible.
+      Each word gets a randomized duration in JS.
+    */
+    @keyframes textFade {
+      0%,
+      100% {
+        opacity: .96;
+      }
+
+      42% {
+        opacity: .10;
+      }
+
+      55% {
+        opacity: .03;
+      }
+
+      68% {
+        opacity: .14;
+      }
+    }
+
+    @keyframes rotateCrosshair {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .color-layer,
+      .word,
+      .cursor-rotator {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="stage" id="stage">
+    <div class="background">
+      <div class="color-layer one"></div>
+      <div class="color-layer two"></div>
+      <div class="color-layer three"></div>
+    </div>
+
+    <div class="word" id="digital">digital</div>
+    <div class="word" id="ampersand">&amp;</div>
+    <div class="word" id="irl">IRL</div>
+  </main>
+
+  <div class="cursor" id="cursor" aria-hidden="true">
+    <div class="cursor-rotator">
+      <div class="cursor-line-h"></div>
+      <div class="cursor-line-v"></div>
+      <div class="cursor-ring"></div>
+      <div class="cursor-dot"></div>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const cursor = document.getElementById("cursor");
+    const words = [...document.querySelectorAll(".word")];
+
+    const random = (min, max) => Math.random() * (max - min) + min;
+
+    function randomizeLayout() {
+      const settings = {
+        /*
+          Max sizes are ~50% larger than the previous version.
+        */
+        digital: {
+          minSize: 14,
+          maxSize: 45
+        },
+
+        ampersand: {
+          minSize: 20,
+          maxSize: 63
+        },
+
+        irl: {
+          minSize: 18,
+          maxSize: 57
+        }
+      };
+
+      words.forEach((word) => {
+        const config = settings[word.id];
+
+        word.style.fontSize =
+          `${random(config.minSize, config.maxSize).toFixed(2)}vw`;
+
+        word.style.left =
+          `${random(-18, 84).toFixed(2)}vw`;
+
+        word.style.top =
+          `${random(-18, 84).toFixed(2)}vh`;
+
+        word.style.zIndex =
+          Math.floor(random(2, 6));
+
+        /*
+          Each word fades on its own rhythm.
+        */
+        word.style.setProperty(
+          "--fade-speed",
+          `${random(7.5, 13.5).toFixed(2)}s`
+        );
+      });
+    }
+
+    randomizeLayout();
+
+    /*
+      Mouse movement = fast mode.
+      Stopping = return to slow ambient mode.
+
+      This avoids relying on document.getAnimations(),
+      so the speed change is much more reliable.
+    */
+    let movementTimer = null;
+
+    window.addEventListener("pointermove", (event) => {
+      cursor.style.left = `${event.clientX}px`;
+      cursor.style.top = `${event.clientY}px`;
+
+      stage.classList.add("is-moving");
+
+      clearTimeout(movementTimer);
+
+      movementTimer = setTimeout(() => {
+        stage.classList.remove("is-moving");
+      }, 140);
+    });
+  </script>
+</body>
+</html>
